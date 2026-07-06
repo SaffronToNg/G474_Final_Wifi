@@ -1,0 +1,120 @@
+#include "lowrate_loop_calc.h"
+
+#include "power_mode.h"
+
+volatile LowRateLoopCalc_t g_lowrate_loop_calc = {0};
+
+void LowRateLoopCalc_Reset(void)
+{
+  g_lowrate_loop_calc.feedback_vy = 0;
+  g_lowrate_loop_calc.err = 0;
+  g_lowrate_loop_calc.prop = 0;
+  g_lowrate_loop_calc.inte = 0;
+  g_lowrate_loop_calc.u0 = 0;
+  g_lowrate_loop_calc.q1_duty_cmd = 0;
+  g_lowrate_loop_calc.q2_duty_cmd = 0;
+  g_lowrate_loop_calc.tick_count = 0U;
+}
+
+void LowRateLoopCalc_SeedFromDuty(int32_t q1_duty_seed)
+{
+  int32_t q2_duty_seed;
+
+  if (q1_duty_seed < 0)
+  {
+    q1_duty_seed = 0;
+  }
+  if (q1_duty_seed > 32767)
+  {
+    q1_duty_seed = 32767;
+  }
+
+  q2_duty_seed = 32767 - q1_duty_seed;
+  if (q2_duty_seed < 0)
+  {
+    q2_duty_seed = 0;
+  }
+
+  g_lowrate_loop_calc.feedback_vy = 0;
+  g_lowrate_loop_calc.err = 0;
+  g_lowrate_loop_calc.prop = 0;
+
+  if (PowerMode_GetActive() == POWER_MODE_BOOST)
+  {
+    g_lowrate_loop_calc.inte = q2_duty_seed << 8;
+    g_lowrate_loop_calc.u0 = q2_duty_seed;
+    g_lowrate_loop_calc.q2_duty_cmd = q2_duty_seed;
+    g_lowrate_loop_calc.q1_duty_cmd = q1_duty_seed;
+  }
+  else
+  {
+    g_lowrate_loop_calc.inte = q1_duty_seed << 8;
+    g_lowrate_loop_calc.u0 = q1_duty_seed;
+    g_lowrate_loop_calc.q1_duty_cmd = q1_duty_seed;
+    g_lowrate_loop_calc.q2_duty_cmd = q2_duty_seed;
+  }
+
+  g_lowrate_loop_calc.tick_count = 0U;
+}
+
+void LowRateLoopCalc_Tick(void)
+{
+  const int32_t kp = 100;
+  const int32_t ki = 10;
+  int32_t maxinte;
+
+  if ((g_minimal_state_machine.state != STATE_RUN) ||
+      (g_minimal_state_machine.loop_control_enable == 0U))
+  {
+    return;
+  }
+
+  if (PowerMode_GetActive() == POWER_MODE_BOOST)
+  {
+    g_lowrate_loop_calc.feedback_vy = g_target_calibration.vx_calibrated;
+  }
+  else
+  {
+    g_lowrate_loop_calc.feedback_vy = g_target_calibration.vy_calibrated;
+  }
+
+  g_lowrate_loop_calc.err =
+      g_target_calibration.vref_target - g_lowrate_loop_calc.feedback_vy;
+  g_lowrate_loop_calc.prop = g_lowrate_loop_calc.err * kp;
+  g_lowrate_loop_calc.inte =
+      g_lowrate_loop_calc.inte + g_lowrate_loop_calc.err * ki;
+
+  if (PowerMode_GetActive() == POWER_MODE_BOOST)
+  {
+    maxinte = g_minimal_state_machine.rise_q2_max_duty << 8;
+  }
+  else
+  {
+    maxinte = g_minimal_state_machine.rise_q1_max_duty << 8;
+  }
+
+  if (g_lowrate_loop_calc.inte > maxinte)
+  {
+    g_lowrate_loop_calc.inte = maxinte;
+  }
+  else if (g_lowrate_loop_calc.inte < 0)
+  {
+    g_lowrate_loop_calc.inte = 0;
+  }
+
+  g_lowrate_loop_calc.u0 =
+      (g_lowrate_loop_calc.prop + g_lowrate_loop_calc.inte) >> 8;
+
+  if (PowerMode_GetActive() == POWER_MODE_BOOST)
+  {
+    g_lowrate_loop_calc.q2_duty_cmd = g_lowrate_loop_calc.u0;
+    g_lowrate_loop_calc.q1_duty_cmd = 32767 - g_lowrate_loop_calc.q2_duty_cmd;
+  }
+  else
+  {
+    g_lowrate_loop_calc.q1_duty_cmd = g_lowrate_loop_calc.u0;
+    g_lowrate_loop_calc.q2_duty_cmd = 32767 - g_lowrate_loop_calc.q1_duty_cmd;
+  }
+
+  g_lowrate_loop_calc.tick_count++;
+}

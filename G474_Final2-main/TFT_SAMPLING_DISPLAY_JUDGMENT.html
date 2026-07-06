@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TFT 采样-语义-显示判定文档</title>
+  <style>
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      line-height: 1.75;
+      margin: 0;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+    h1, h2, h3 {
+      color: #0f172a;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+    }
+    h2 {
+      margin-top: 2rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 2px solid #dbeafe;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin: 18px 0;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+    code, pre, .mono {
+      font-family: Consolas, "Courier New", monospace;
+    }
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 14px 16px;
+      border-radius: 10px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #eff6ff;
+    }
+    ul li, ol li {
+      margin: 6px 0;
+    }
+    .ok {
+      color: #166534;
+      font-weight: 700;
+    }
+    .warn {
+      color: #92400e;
+      font-weight: 700;
+    }
+    .bad {
+      color: #991b1b;
+      font-weight: 700;
+    }
+    .small {
+      color: #475569;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>TFT 采样-语义-显示判定文档</h1>
+
+    <div class="card">
+      <p><strong>目的：</strong>回答“当前屏幕显示的电流值，是否已经是 ADC 采样后映射得到的实际物理电流值；各显示项分别对应什么”。</p>
+      <p><strong>判定范围：</strong>仅基于当前工程中已检查到的显示链路、采样语义链路、最小处理链路和目标/保护链路做证据化判断；不臆造未看到的硬件系数或外部标定文档。</p>
+    </div>
+
+    <h2>1. 关键结论</h2>
+    <div class="card">
+      <p class="bad">结论 1：当前 TFT 上的 <span class="mono">IOUT</span> 不能直接判定为“已经严格映射到真实安培值的实际输出电流”。</p>
+      <p>当前代码能够确认的是：</p>
+      <ol>
+        <li>先从 ADC DMA 缓冲区取到某一路电流原始码值；</li>
+        <li>再做 offset 去零；</li>
+        <li>再做简单平均；</li>
+        <li>最后乘一个固定经验比例 <span class="mono">150/227</span> 用于 TFT 显示。</li>
+      </ol>
+      <p class="warn">但在当前检查到的这条 TFT 显示链路中，没有看到“电流采样电阻 + 放大倍数 + ADC 参考 + 通道标定系数”这一套显式的安培换算闭环。因此更稳妥的说法是：<strong>它是输出侧电流通道的去零后显示量</strong>，而不是已经被严格证明的真实物理电流值。</p>
+      <p class="ok">结论 2：TFT 显示的 <span class="mono">IOUT</span> 是“模式语义量”，不是固定物理通道名。</p>
+      <ul>
+        <li><strong>BUCK 模式：</strong><span class="mono">IOUT = Y 侧电流通道（Iy）</span></li>
+        <li><strong>BOOST 模式：</strong><span class="mono">IOUT = X 侧电流通道（Ix）</span></li>
+      </ul>
+      <p class="warn">结论 3：当前 TFT 上的 <span class="mono">VIN</span> 口径并不完全统一。BUCK/BOOST 下使用的变量口径不同，不能无条件把它都当成“统一定义的实际输入电压值”。</p>
+    </div>
+
+    <h2>2. ADC 原始语义映射</h2>
+    <div class="card">
+      <p>当前采样语义映射在 <span class="mono">Core/Src/sample_semantics.c</span> 中已经明确写出：</p>
+      <pre>ADC1_RESULT[0] -> IL
+ADC1_RESULT[1] -> Vy
+ADC1_RESULT[2] -> Iy
+ADC1_RESULT[3] -> Vx
+ADC1_RESULT[4] -> Ix
+
+ADC2_RESULT[0] -> Vadj
+ADC2_RESULT[1] -> Iadj
+ADC2_RESULT[2] -> Temp</pre>
+      <table>
+        <thead>
+          <tr>
+            <th>DMA / ADC 槽位</th>
+            <th>变量名</th>
+            <th>当前含义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">ADC1[0]</td><td class="mono">IL</td><td>电感电流相关通道原始码值</td></tr>
+          <tr><td class="mono">ADC1[1]</td><td class="mono">Vy</td><td>Y 侧电压原始码值</td></tr>
+          <tr><td class="mono">ADC1[2]</td><td class="mono">Iy</td><td>Y 侧电流原始码值</td></tr>
+          <tr><td class="mono">ADC1[3]</td><td class="mono">Vx</td><td>X 侧电压原始码值</td></tr>
+          <tr><td class="mono">ADC1[4]</td><td class="mono">Ix</td><td>X 侧电流原始码值</td></tr>
+          <tr><td class="mono">ADC2[0]</td><td class="mono">Vadj</td><td>电压调节输入原始码值</td></tr>
+          <tr><td class="mono">ADC2[1]</td><td class="mono">Iadj</td><td>电流调节输入原始码值</td></tr>
+          <tr><td class="mono">ADC2[2]</td><td class="mono">Temp</td><td>温度相关原始码值</td></tr>
+        </tbody>
+      </table>
+      <p class="small">这一层是“物理/采样通道语义”，还不是输入/输出语义。</p>
+    </div>
+
+    <h2>3. 当前样本处理链路</h2>
+    <div class="card">
+      <p>在 <span class="mono">Core/Src/sample_processing.c</span> 中，当前最小恢复链路主要做了三件事：</p>
+      <ol>
+        <li><strong>raw 直取：</strong>把语义层的 raw 码值放进 <span class="mono">g_sample_processed</span></li>
+        <li><strong>offset 学习：</strong>前 256 次累计电流通道，得到 <span class="mono">ix_offset / iy_offset / il_offset</span></li>
+        <li><strong>去零与平均：</strong>得到 <span class="mono">ix_zero_based / iy_zero_based / il_zero_based</span> 以及 <span class="mono">vx_avg / vy_avg / ix_avg / iy_avg</span></li>
+      </ol>
+      <pre>zero_based = raw - offset
+avg = 一阶平滑后的平均 ADC 值</pre>
+      <p class="warn">要点：这里恢复的是“去偏置 + 平均”框架，不等于“已经完成工程级物理量校准”。代码注释也明确说当前阶段不恢复完整电流方向语义和完整校准行为。</p>
+    </div>
+
+    <h2>4. TFT 三个主显示项分别对应什么</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>屏幕项</th>
+            <th>BUCK 模式</th>
+            <th>BOOST 模式</th>
+            <th>判定</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">VTAR</td>
+            <td><span class="mono">(vref_target * 6800) &gt;&gt; 12</span></td>
+            <td><span class="mono">(vref_target * 6800) &gt;&gt; 12</span></td>
+            <td>目标值，不是实时采样值</td>
+          </tr>
+          <tr>
+            <td class="mono">VIN</td>
+            <td><span class="mono">(vx_avg * 6800) &gt;&gt; 12</span></td>
+            <td><span class="mono">(vy_calibrated * 6800) &gt;&gt; 12</span></td>
+            <td>模式语义下的输入电压显示，但 BUCK/BOOST 使用变量口径不一致</td>
+          </tr>
+          <tr>
+            <td class="mono">IOUT</td>
+            <td><span class="mono">((iy_avg - iy_offset) * 150 + 113) / 227</span></td>
+            <td><span class="mono">((ix_avg - ix_offset) * 150 + 113) / 227</span></td>
+            <td>模式语义下的输出侧电流显示量，不足以直接证明是真实安培值</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>5. 为什么当前 IOUT 不能直接叫“实际电流值”</h2>
+    <div class="card">
+      <h3>5.1 已经看到的显示公式</h3>
+      <pre>BUCK:  iout_feedback = iy_avg - iy_offset
+BOOST: iout_feedback = ix_avg - ix_offset
+
+if (iout_feedback &lt; 0) iout_feedback = 0;
+
+iout_display = (iout_feedback * 150 + 113) / 227</pre>
+      <h3>5.2 这个公式说明了什么</h3>
+      <ul>
+        <li>已经做了去偏置，说明它不是纯 raw；</li>
+        <li>已经做了模式映射，说明它在表达“输出侧”而不是固定 X/Y 侧；</li>
+        <li>但最后只看到一个固定比例 <span class="mono">150/227</span>，没有看到显式电流物理换算闭环。</li>
+      </ul>
+      <h3>5.3 因而更稳妥的命名</h3>
+      <p class="ok">当前更稳妥的描述应是：<strong>TFT 的 IOUT 是输出侧电流通道经 offset 去零、平均后，再经过经验比例压缩得到的显示值</strong>。</p>
+      <p class="bad">不稳妥的描述则是：<strong>“屏幕此时显示的就是已经严格校准的真实输出电流安培值。”</strong></p>
+    </div>
+
+    <h2>6. VIN 为什么也不能掉以轻心</h2>
+    <div class="card">
+      <p>当前 TFT 中，<span class="mono">VIN</span> 的模式实现并不对称：</p>
+      <ul>
+        <li><strong>BUCK：</strong>直接使用 <span class="mono">vx_avg</span> 参与显示</li>
+        <li><strong>BOOST：</strong>使用 <span class="mono">vy_calibrated</span> 参与显示</li>
+      </ul>
+      <p>但在 <span class="mono">Core/Src/target_calibration.c</span> 中，<span class="mono">vx_calibrated / vy_calibrated</span> 本来都各自有校准路径。</p>
+      <p class="warn">这意味着当前 TFT 的 VIN 并不是“统一通过同一口径校准后的输入电压显示”，而是存在 BUCK/BOOST 两套口径混用的情况。</p>
+    </div>
+
+    <h2>7. TFT 数字格式是什么</h2>
+    <div class="card">
+      <p>在 <span class="mono">Core/Src/LCDDriver.c</span> 中，<span class="mono">LCDShowFnum()</span> 的显示格式固定为：</p>
+      <pre>digits[0] digits[1] . digits[2] digits[3]</pre>
+      <p>例如传入 <span class="mono">1234</span>，会显示成：</p>
+      <pre>12.34</pre>
+      <p>因此：</p>
+      <ul>
+        <li><span class="mono">VTAR</span>、<span class="mono">VIN</span>、<span class="mono">IOUT</span> 都是按 <strong>两位整数 + 两位小数</strong> 的格式显示；</li>
+        <li>显示函数本身并不知道单位物理意义，只负责插入小数点；</li>
+        <li>真正决定量纲的是上层传入的换算公式。</li>
+      </ul>
+    </div>
+
+    <h2>8. 串口与 TFT 的语义口径并不相同</h2>
+    <div class="card">
+      <p>在 <span class="mono">Core/Src/main.c</span> 的状态打印里，注释明确写着：</p>
+      <pre>VX/VY 始终是 X/Y 侧电压
+IX/IY 始终是 X/Y 侧电流
+上位机根据模式 M 自行判断哪侧是输入、哪侧是输出</pre>
+      <p>这说明：</p>
+      <ul>
+        <li><strong>串口状态输出：</strong>偏向物理语义（X/Y）</li>
+        <li><strong>TFT 显示：</strong>偏向模式语义（VIN / IOUT）</li>
+      </ul>
+      <p class="warn">所以不能直接拿串口的 <span class="mono">IX/IY</span> 与 TFT 上的 <span class="mono">IOUT</span> 逐字面对照，而不先做模式映射。</p>
+    </div>
+
+    <h2>9. 最终判定表</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>问题</th>
+            <th>判定</th>
+            <th>理由</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>TFT 上的 IOUT 是否等于已经严格映射的实际电流值？</td>
+            <td class="bad">不能直接确认</td>
+            <td>当前只看到去偏置、平均和经验比例显示，未在这条显示链路中看到完整的安培标定闭环</td>
+          </tr>
+          <tr>
+            <td>IOUT 是否有明确物理来源？</td>
+            <td class="ok">可以确认</td>
+            <td>BUCK 取 Iy，BOOST 取 Ix，都是输出侧电流语义映射结果</td>
+          </tr>
+          <tr>
+            <td>VTAR 是否是实时采样值？</td>
+            <td class="bad">不是</td>
+            <td>它来自目标值 <span class="mono">vref_target</span> 的比例换算</td>
+          </tr>
+          <tr>
+            <td>VIN 是否口径统一？</td>
+            <td class="warn">当前不统一</td>
+            <td>BUCK 用 <span class="mono">vx_avg</span>，BOOST 用 <span class="mono">vy_calibrated</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>10. 本文档最重要的一句话</h2>
+    <div class="card">
+      <p class="bad">当前 TFT 的 <span class="mono">IOUT</span> 更像“输出侧电流通道的去零经验显示值”，而不是已经被代码充分证明的“真实输出电流安培值”。</p>
+      <p class="ok">但它的模式对应关系是明确的：<strong>BUCK 看 Iy，BOOST 看 Ix。</strong></p>
+    </div>
+  </div>
+</body>
+</html>
