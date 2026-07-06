@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G474 Final Wifi 总览</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121932;
+      --panel-2: #1a2345;
+      --text: #e8ecff;
+      --muted: #aab5df;
+      --line: #31406d;
+      --accent: #7cc7ff;
+      --warn: #ffd166;
+      --danger: #ff7b7b;
+      --ok: #7ee081;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #09101d 0%, #101731 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+    h1, h2, h3 { margin: 0 0 12px; }
+    h1 { font-size: 34px; }
+    h2 { font-size: 24px; margin-top: 36px; }
+    h3 { font-size: 18px; }
+    p { margin: 0 0 12px; color: var(--muted); }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+    .hero, .panel, .warn, .card {
+      background: rgba(18, 25, 50, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+    .hero { padding: 28px; }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 13px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .card { padding: 20px; }
+    .meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .card ul, .panel ul, .warn ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    .panel { padding: 24px; margin-top: 18px; }
+    .warn {
+      padding: 22px;
+      margin-top: 22px;
+      border-color: rgba(255, 209, 102, 0.45);
+      background: rgba(58, 40, 10, 0.35);
+    }
+    .warn strong { color: var(--warn); }
+    .danger strong { color: var(--danger); }
+    .ok strong { color: var(--ok); }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .step {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .proto {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(70px, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .proto div {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text);
+    }
+    code {
+      background: rgba(255,255,255,0.06);
+      padding: 2px 6px;
+      border-radius: 6px;
+      color: #f3f6ff;
+    }
+    @media (max-width: 820px) {
+      .flow { grid-template-columns: 1fr; }
+      .proto { grid-template-columns: repeat(2, 1fr); }
+      h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>G474 Final Wifi 总览</h1>
+      <p>
+        这是一个包含 <strong>3 个 STM32G474 子工程</strong> 的总仓库入口页，目的是让第一次接触仓库的使用者，快速知道：
+        应该打开哪个工程、需要什么工具链、运行后会看到什么，以及哪些地方最容易踩坑。
+      </p>
+      <div class="chips">
+        <span class="chip">STM32G474CBTx</span>
+        <span class="chip">STM32CubeMX</span>
+        <span class="chip">Keil MDK-ARM</span>
+        <span class="chip">Buck / Boost</span>
+        <span class="chip">WAIT → RISE → RUN</span>
+        <span class="chip">USART3 + TFT</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>子工程导航</h2>
+      <div class="grid">
+        <article class="card">
+          <h3><a href="G474_Final1-main/README.md">G474_Final1-main</a></h3>
+          <div class="meta">入口：<code>MDK-ARM/G474_NewStart.uvprojx</code> / <code>G474_NewStart.ioc</code></div>
+          <p>适合作为总代码结构的代表性入口来阅读，包括状态机、串口状态帧、TFT 显示与基本控制骨架。</p>
+          <ul>
+            <li><a href="G474_Final1-main/README.md">子工程 README</a></li>
+            <li><a href="G474_Final1-main/MDK-ARM/G474_NewStart.uvprojx">Keil 工程</a></li>
+            <li><a href="G474_Final1-main/G474_NewStart.ioc">CubeMX 配置</a></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><a href="G474_Final2-main/README.md">G474_Final2-main</a></h3>
+          <div class="meta">入口：<code>MDK-ARM/G474_NewStart.uvprojx</code> / <code>G474_NewStart.ioc</code></div>
+          <p>该目录下已有较多分析文档，适合阅读偏置、显示语义、迁移背景和电流逻辑来源。</p>
+          <ul>
+            <li><a href="G474_Final2-main/README.md">子工程 README</a></li>
+            <li><a href="G474_Final2-main/TFT_SAMPLING_DISPLAY_JUDGMENT.html">TFT 显示判定文档</a></li>
+            <li><a href="G474_Final2-main/OFFSET_EXPLANATION.html">OFFSET 说明</a></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><a href="G474_Final3-main/README.md">G474_Final3-main</a></h3>
+          <div class="meta">入口：<code>MDK-ARM/G474_NewStart.uvprojx</code> / <code>G474_NewStart.ioc</code></div>
+          <p>与前两者共享相同工程骨架，适合对比不同阶段的调参、显示策略与控制实现。</p>
+          <ul>
+            <li><a href="G474_Final3-main/README.md">子工程 README</a></li>
+            <li><a href="G474_Final3-main/MDK-ARM/G474_NewStart.uvprojx">Keil 工程</a></li>
+            <li><a href="G474_Final3-main/G474_NewStart.ioc">CubeMX 配置</a></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>系统组成概览</h2>
+      <div class="panel">
+        <p>从当前代码可以抽象出如下系统结构：</p>
+        <ul>
+          <li><strong>采样链</strong>：ADC1 / ADC2 + DMA，结合功率板采样电路获取电压、电流、调节量</li>
+          <li><strong>调度链</strong>：TIM2 / TIM3 周期任务驱动采样处理、状态机、控制与串口输出</li>
+          <li><strong>驱动链</strong>：HRTIM 负责功率相关输出驱动</li>
+          <li><strong>状态机</strong>：Buck / Boost 下共用 WAIT / RISE / RUN 概念，但实现细节不同</li>
+          <li><strong>交互链</strong>：KEY2 触发输出使能，USART3 发送状态帧并接收 <code>V####</code> 设置 VTAR，TFT 显示最终数值</li>
+          <li><strong>显示 / 校准链</strong>：TFT 与串口上报值是经过换算、补偿、偏置修正后的结果</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>状态机流程（概念）</h2>
+      <div class="flow">
+        <div class="step">
+          <h3>WAIT</h3>
+          <p>等待 offset / 模式识别稳定，并等待按键或条件触发。此时系统不应被简单理解为“已经输出”。</p>
+        </div>
+        <div class="step">
+          <h3>RISE</h3>
+          <p>逐步建立驱动与占空比，Buck / Boost 的过渡过程都在这里发生。KEY2 参与触发输出使能。</p>
+        </div>
+        <div class="step">
+          <h3>RUN</h3>
+          <p>进入闭环或稳定运行阶段。此时 TFT 与串口上报的是最终显示链值，而不是裸 ADC 原始值。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>串口协议速览</h2>
+      <div class="panel">
+        <p>代表性工程的代码显示，USART3 会周期发送状态帧，并接收固定格式命令：</p>
+        <div class="proto">
+          <div>0xAA</div>
+          <div>mode</div>
+          <div>vin</div>
+          <div>vout</div>
+          <div>ii</div>
+          <div>io</div>
+          <div>vtar</div>
+          <div>XOR</div>
+        </div>
+        <p style="margin-top:12px;">设置命令使用：</p>
+        <p><code>V####</code>，例如 <code>V2500</code></p>
+        <p>其作用是把目标显示值反推为系统内部的 <code>vref_target</code>。</p>
+      </div>
+    </section>
+
+    <section class="warn danger">
+      <h2>高风险误区</h2>
+      <ul>
+        <li><strong>不要默认三个子工程完全等价。</strong> 它们共享骨架，但参数、校准、行为细节可能不同。</li>
+        <li><strong>不要默认该仓库可直接跑在任意 STM32G474 开发板上。</strong> 当前工程明显依赖板级功率电路、TFT、KEY2、HSE、采样链。</li>
+        <li><strong>不要把 TFT / 串口值直接当作瞬时物理量。</strong> 这些数值可能已经经过滤波、偏置修正、经验补偿和显示换算。</li>
+      </ul>
+    </section>
+
+    <section class="warn ok">
+      <h2>建议的阅读顺序</h2>
+      <ul>
+        <li>先看顶层 <a href="README.md">README.md</a></li>
+        <li>再进入目标子工程阅读对应的 README</li>
+        <li>用 Keil 打开 <code>MDK-ARM/G474_NewStart.uvprojx</code></li>
+        <li>如需查看外设配置，再用 CubeMX 打开 <code>G474_NewStart.ioc</code></li>
+        <li>若要理解显示值、偏置或迁移背景，再阅读 `G474_Final2-main` 中的分析文档</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>深入阅读</h2>
+      <div class="panel">
+        <ul>
+          <li><a href="G474_Final2-main/F334_CURRENT_LOGIC.html">F334_CURRENT_LOGIC.html</a></li>
+          <li><a href="G474_Final2-main/INPUT_SOURCE_CC_ANALYSIS.html">INPUT_SOURCE_CC_ANALYSIS.html</a></li>
+          <li><a href="G474_Final2-main/OFFSET_EXPLANATION.html">OFFSET_EXPLANATION.html</a></li>
+          <li><a href="G474_Final2-main/TFT_SAMPLING_DISPLAY_JUDGMENT.html">TFT_SAMPLING_DISPLAY_JUDGMENT.html</a></li>
+          <li><a href="G474_Final2-main/STM32F334_TO_G474_MIGRATION_PLAN.md">STM32F334_TO_G474_MIGRATION_PLAN.md</a></li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
