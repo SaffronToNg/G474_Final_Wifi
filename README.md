@@ -154,20 +154,7 @@ V2500
 
 ---
 
-## 延伸阅读 / 现有分析文档
 
-以下文档当前位于 [G474_Final2-main](G474_Final2-main/) 中，适合作为背景材料阅读：
-
-- [F334_CURRENT_LOGIC.html](G474_Final2-main/F334_CURRENT_LOGIC.html)  
-  说明 F334 电流逻辑背景与来源。
-- [INPUT_SOURCE_CC_ANALYSIS.html](G474_Final2-main/INPUT_SOURCE_CC_ANALYSIS.html)  
-  说明输入源 / 控制行为相关分析。
-- [OFFSET_EXPLANATION.html](G474_Final2-main/OFFSET_EXPLANATION.html)  
-  说明偏置、零点和测量误差来源。
-- [TFT_SAMPLING_DISPLAY_JUDGMENT.html](G474_Final2-main/TFT_SAMPLING_DISPLAY_JUDGMENT.html)  
-  说明 TFT 显示值和采样 / 显示判定链之间的关系。
-- [STM32F334_TO_G474_MIGRATION_PLAN.md](G474_Final2-main/STM32F334_TO_G474_MIGRATION_PLAN.md)  
-  说明项目从 F334 到 G474 的迁移背景。
 
 ---
 
